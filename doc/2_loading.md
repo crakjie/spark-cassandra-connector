@@ -5,14 +5,14 @@ This section describes how to access data from Cassandra table with Spark.
 
 ### Obtaining a Cassandra table as an `RDD`
 
-To get a Spark RDD that represents a Cassandra table, 
-call the `cassandraTable` method on the `SparkContext` object. 
+To get a Spark RDD that represents a Cassandra table,
+call the `cassandraTable` method on the `SparkContext` object.
 
 ```scala
 sc.cassandraTable("keyspace name", "table name")
 ```    
 
-If no explicit type is given to `cassandraTable`, the result of this expression is `CassandraRDD[CassandraRow]`. 
+If no explicit type is given to `cassandraTable`, the result of this expression is `CassandraRDD[CassandraRow]`.
 
 Create this keyspace and table in Cassandra using cqlsh:
 
@@ -20,7 +20,7 @@ Create this keyspace and table in Cassandra using cqlsh:
 CREATE KEYSPACE test WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 };
 CREATE TABLE test.words (word text PRIMARY KEY, count int);
 ```
-    
+
 Load data into the table:
 
 ```scala
@@ -41,7 +41,6 @@ rdd.toArray.foreach(println)
 
 ### Using emptyCassandraRDD implementation
 
-To create an instance of `CassandraRDD` for a table which does **not** exist use the emptyCassandraRDD method. 
 `emptyCassandraRDD`s do not perform validation or create partitions so they can be used to represent absent
 tables. To create one, either initialize a `CassandraRDD` as usual and then call `toEmptyCassandraRDD`
 method on it or call `emptyCassandraTable` method on Spark context.
@@ -58,7 +57,7 @@ val emptyRDD2 = sc.emptyCassandraTable[SomeType]("ks", "not_existing_table"))
 
 ### Reading primitive column values
 
-You can read columns in a Cassandra table using the get methods of the `CassandraRow` object. 
+You can read columns in a Cassandra table using the get methods of the `CassandraRow` object.
 The get methods access individual column values by column name or column index.
 Type conversions are applied on the fly. Use `getOption` variants when you expect to receive Cassandra null values.
 
@@ -73,11 +72,11 @@ val firstRow = rdd.first
 Get the number of columns and column names:
 
 ```scala
-firstRow.columnNames    // Stream(word, count) 
-firstRow.size           // 2 
+firstRow.columnNames    // Stream(word, count)
+firstRow.size           // 2
 ```
 
-Use one of `getXXX` getters to obtain a column value converted to desired type: 
+Use one of `getXXX` getters to obtain a column value converted to desired type:
 ```scala
 firstRow.getInt("count")       // 20       
 firstRow.getLong("count")      // 20L  
@@ -103,9 +102,9 @@ firstRow.get[Option[Int]]("count")    // Some(20)
 
 ### Reading collections
 
-You can read collection columns in a Cassandra table using the `getList`, `getSet`, `getMap` or generic `get` 
-methods of the `CassandraRow` object. The `get` methods access 
-the collection column and return a corresponding Scala collection. 
+You can read collection columns in a Cassandra table using the `getList`, `getSet`, `getMap` or generic `get`
+methods of the `CassandraRow` object. The `get` methods access
+the collection column and return a corresponding Scala collection.
 The generic `get` method lets you specify the precise type of the returned collection.
 
 Assuming you set up the test keyspace earlier, follow these steps to access a Cassandra collection.
@@ -114,11 +113,11 @@ In the test keyspace, set up a collection set using cqlsh:
 
 ```sql
 CREATE TABLE test.users (username text PRIMARY KEY, emails SET<text>);
-INSERT INTO test.users (username, emails) 
+INSERT INTO test.users (username, emails)
      VALUES ('someone', {'someone@email.com', 's@email.com'});
 ```
 
-Then in your application, retrieve the first row: 
+Then in your application, retrieve the first row:
 
 ```scala
 val row = sc.cassandraTable("test", "users").first
@@ -141,7 +140,7 @@ It is also possible to convert a collection to CQL `String` representation:
 row.get[String]("emails")               // "[someone@email.com, s@email.com]"
 ```
 
-A `null` collection is equivalent to an empty collection, therefore you don't need to use `get[Option[...]]` 
+A `null` collection is equivalent to an empty collection, therefore you don't need to use `get[Option[...]]`
 with collections.
 
 ### Reading columns of Cassandra User Defined Types
@@ -164,32 +163,32 @@ val number = address.getInt("number")
 
 ### Data type conversions
 
-The following table shows recommended Scala types corresponding to Cassandra column types. 
+The following table shows recommended Scala types corresponding to Cassandra column types.
 
 | Cassandra type    | Scala types
 |-------------------|--------------------------------------------
 | `ascii`, `text`   | `String`                                         
 | `bigint`          | `Long`                                       
-| `blob`            | `ByteBuffer`, `Array[Byte]` 
+| `blob`            | `ByteBuffer`, `Array[Byte]`
 | `boolean`         | `Boolean`, `Int`              
-| `counter`         | `Long` 
+| `counter`         | `Long`
 | `date`            | `Int`, `String` (YYYY-MM-DD), `java.util.Date`, `java.sql.Date`, `org.joda.time.DateTime`
-| `decimal`         | `BigDecimal`, `java.math.BigDecimal` 
+| `decimal`         | `BigDecimal`, `java.math.BigDecimal`
 | `double`          | `Double`    
 | `float`           | `Float`    
-| `inet`            | `java.net.InetAddress` 
-| `int`             | `Int` 
-| `list`            | `Vector`, `List`, `Iterable`, `Seq`, `IndexedSeq`, `java.util.List` 
-| `map`             | `Map`, `TreeMap`, `java.util.HashMap` 
-| `set`             | `Set`, `TreeSet`, `java.util.HashSet` 
+| `inet`            | `java.net.InetAddress`
+| `int`             | `Int`
+| `list`            | `Vector`, `List`, `Iterable`, `Seq`, `IndexedSeq`, `java.util.List`
+| `map`             | `Map`, `TreeMap`, `java.util.HashMap`
+| `set`             | `Set`, `TreeSet`, `java.util.HashSet`
 | `smallint`        | `Short`
-| `text`            | `String` 
+| `text`            | `String`
 | `time`            | `Long`, *Do Not Read this Column as a Date**
-| `timestamp`       | `Long`, `java.util.Date`, `java.sql.Date`, `org.joda.time.DateTime` 
-| `timeuuid`        | `java.util.UUID` 
+| `timestamp`       | `Long`, `java.util.Date`, `java.sql.Date`, `org.joda.time.DateTime`
+| `timeuuid`        | `java.util.UUID`
 | `tinyint`         | `Byte`
-| `uuid`            | `java.util.UUID` 
-| `varchar`         | `String` 
+| `uuid`            | `java.util.UUID`
+| `varchar`         | `String`
 | `varint`          | `BigInt`, `java.math.BigInteger`
 | `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  
 | user defined      | `UDTValue`
@@ -197,9 +196,9 @@ The following table shows recommended Scala types corresponding to Cassandra col
 *Since `time` is encoded in nanoseconds from epoch rather than milliseconds there will be Scale
 error with an automatic conversion to `java.util.Date`*
 
-Other conversions might work, but may cause loss of precision or may not work for all values. 
-All types are convertible to strings. Converting strings to numbers, dates, 
-addresses or UUIDs is possible as long as the string has proper 
+Other conversions might work, but may cause loss of precision or may not work for all values.
+All types are convertible to strings. Converting strings to numbers, dates,
+addresses or UUIDs is possible as long as the string has proper
 contents, defined by the CQL3 standard. Maps can be implicitly converted to/from sequences of key-value tuples.
 
 ## Accessing Cassandra with SparkSQL (since 1.1)
@@ -216,7 +215,7 @@ val rdd: SchemaRDD = cc.sql("SELECT * from keyspace.table WHERE ...")
 ```
 
 ### Refresh local Cassandra table schema cache
-`CassandraSQLContext` caches Cassandra table schema locally. The cache expires in 10 minutes by default. It can be manually 
+`CassandraSQLContext` caches Cassandra table schema locally. The cache expires in 10 minutes by default. It can be manually
 refreshed by calling `cassandraSQLContext.refreshCassandraSchema()` when a Cassandra table schema changes and user can't
 wait for the cache expires automatically.
 
@@ -289,6 +288,16 @@ repartitionRDD.collect.foreach(println)
 //(CustomerID(3),CassandraRow{cust_id: 3, address: Poland, name: Jacek})
 ```
 
+####Preserve partitoner after joinWithCassandraRDD
+
+If you want to keep the previous rdd use the parameter preservePartitioner
+
+In the following example the repartitioning by cassandra replica is preserved
+```scala
+val joinedRDD = sc.parallelize(0 to 5).repartitionByCassandraReplica("test","customer_info").joinWithCassandraTable("test","customer_info", preservePartitioner = true)
+val groupedByKeyRDD = joinedRDD.groupByKey() //no need to shuffle again.
+```
+
 ###Compatibility of joinWithCassandraTable and other CassandraRDD APIs
 The result of a joinWithCassandraRDD is compatible with all of the standard CassandraRDD api options with one additional
 function, `.on`. Use `.on(ColumnSelector)` for specifying which columns to join on. Since `.on` only applies to CassandraJoinRDDs
@@ -318,7 +327,7 @@ See [Reference Section](reference.md#read-tuning-parameters)
 ### Using Implicits for Configuration
 
 In addition you are able to set these parameters on a per table basis by using `implicit vals`. This
-allows a user to define a set of parameters in a separate object and import them into a block of 
+allows a user to define a set of parameters in a separate object and import them into a block of
 code rather than repeatedly passing the same [`ReadConf` object](https://github.com/datastax/spark-cassandra-connector/blob/master/spark-cassandra-connector/src/main/scala/com/datastax/spark/connector/rdd/ReadConf.scala#L7-L18).
 
 ```scala
@@ -330,7 +339,7 @@ val rdd = sc.cassandraTable("write_test","collections")
 rdd.readConf
 //com.datastax.spark.connector.rdd.ReadConf = ReadConf(100,100,LOCAL_ONE,true)
 ```
-   
+
 Or you can define them implicitly in the same block as the `cassandraTable` call
 
 ```scala

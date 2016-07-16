@@ -11,7 +11,7 @@ import com.datastax.spark.connector.util.{CountingIterator, CqlWhereParser}
 import com.datastax.spark.connector.writer._
 import com.datastax.spark.connector.util.Quote._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.{Partition, Partitioner, TaskContext}
 import scala.reflect.ClassTag
 
 import com.google.common.util.concurrent.{FutureCallback, Futures, SettableFuture}
@@ -37,7 +37,8 @@ class CassandraJoinRDD[L, R] private[connector](
     val clusteringOrder: Option[ClusteringOrder] = None,
     val readConf: ReadConf = ReadConf(),
     manualRowReader: Option[RowReader[R]] = None,
-    manualRowWriter: Option[RowWriter[L]] = None)(
+    manualRowWriter: Option[RowWriter[L]] = None,
+    preservePartitioner : Boolean = false )(
   implicit
     val leftClassTag: ClassTag[L],
     val rightClassTag: ClassTag[R],
@@ -47,6 +48,13 @@ class CassandraJoinRDD[L, R] private[connector](
   with CassandraTableRowReaderProvider[R] {
 
   override type Self = CassandraJoinRDD[L, R]
+
+  @transient
+  override val partitioner: Option[Partitioner] =
+    if(preservePartitioner)
+      left.partitioner
+    else
+      None
 
   override protected val classTag = rightClassTag
 
